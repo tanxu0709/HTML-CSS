@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<meta charset="gb2312" />
+<script>
+var DB;
+//创建数据库方法
+function initDatabase() {
+    if (!window.openDatabase) {
+        alert('浏览器不支持Web SQL数据库.');
+    } else {
+        var dbName = 'mydb'; //定义数据库名称
+        var dbVersion = '1.0'; //定义数据库版本
+        var dbDec = 'DEMO Database'; //定义数据库说明信息
+        var dbSize = 100000; //  定义数据库大小
+        DB = openDatabase(dbName, dbVersion, dbDec, dbSize); //创建数据库，并调用showResult方法
+    }
+}
+//创建数据表
+function createTable()
+{
+	DB.transaction(function(tx){
+		tx.executeSql('create table if not exists USERINFO(USERNAME,EMAIL,STUNUMBER)');
+	});
+}
+//注册方法
+function register()
+{
+	
+	initDatabase();
+	createTable();
+	var username = document.getElementById("username").value;
+	var email = document.getElementById("email").value;
+	var stunumber = document.getElementById("stunumber").value;	
+	DB.transaction(function(tx){
+		tx.executeSql(
+				'select * from USERINFO where USERNAME=?',
+				[username],
+				function(tx,rs){
+					if (rs.rows.length>0) //用户名已经存在
+					{
+						alert("该用户名已经存在，请使用其他用户名注册。");
+					}
+					else
+					{
+						DB.transaction(function(tx){
+							tx.executeSql( //将新用户注册信息插入数据库
+								'insert into USERINFO(USERNAME,EMAIL,STUNUMBER) values(?,?,?)',
+								[username,email,stunumber],
+								function(tx,rs){
+									alert('注册成功');
+								},
+								function(tx,error){
+									alert('注册失败');
+								}
+							);
+						});
+					}
+				}
+		);
+	});
+}
+//登录方法
+function login()
+{
+	initDatabase();
+	var username = document.getElementById("login_username").value;
+	var stunumber = document.getElementById("login_stunumber").value;
+	DB.transaction(function(tx){
+		tx.executeSql(
+			'select * from USERINFO where USERNAME=? and STUNUMBER=?',
+			[username,stunumber],
+			function(tx,rs){
+				if (rs.rows.length==0) //未查询到指定用户名与密码的用户信息
+				{
+					alert("登录失败");
+				}
+				else
+				{
+					var msg ='';
+					for(var i=0;i<rs.rows.length;i++)
+					{
+						msg += '您好，'+rs.rows.item(i).USERNAME 
+							+'\n\n您的email是 : ' +rs.rows.item(i).EMAIL;
+					}
+					alert(msg);
+				}
+			}
+		);
+	});
+}
+
+</script>
+<body>
+<div>
+	<div style="float:left;border-style:outset;width:400px;height:400px">
+		<center>
+		<h2>校园网注册</h2>
+		
+		<table>
+			<tr>
+				<td valign="top">用户名:</td>
+				<td><input id="username" type="text"  autofocus="autofocus" minlength="7" pattern="^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{6,}$" required/>
+				<br>
+					<span style="color:red;font-size:12px">只允许输入英文和数字的组合,且长度至少为6位</span>
+                </td>
+			</tr>
+
+            <tr>
+				<td>邮  箱:</td>
+				<td><input id="email" type="email" /></td>
+			</tr>
+
+			<tr>
+				<td>学  号:</td>
+				<td><input id="stunumber" οnkeypress="return (/[\d]/.test(String.fromCharCode(event.keyCode)))" type="text"  pattern="^[0-9]*$"/>
+                    <br>
+                    <span style="color:red;font-size:12px">只允许输入数字</span>
+                </td>
+			</tr>
+
+			<tr>
+				<td colspan="2" align="right">
+					<input type="button" value="注册新用户" onclick="register()"/>
+				</td>
+			</tr>
+		</table>
+		</form>
+		</center>
+	</div>
+	<div style="float:left;border-style:outset;margin-left:30px;width:400px;height:400px">
+		<center>
+		<h2>校园网登录</h2>
+		<form id="logForm">
+		<table>
+			<tr>
+				<td>用户名:</td>
+				<td><input type="text" id="login_username"/></td>
+			</tr>
+			<tr>
+				<td>学  号:</td>
+				<td><input type="number" id="login_stunumber"/></td>
+			</tr>
+			<tr>
+				<td colspan="2" align="right">
+					<input type="button" value="用户登录" onclick="login()"/>
+				</td>
+			</tr>
+		</table>
+		</form>
+		</center>
+	</div>
+</div>
+<br>
+
+</body>
+</html>
